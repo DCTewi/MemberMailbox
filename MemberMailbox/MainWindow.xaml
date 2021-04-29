@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MemberMailbox"
         mc:Ignorable="d"
-        Title="舰长信箱 v1.0 by dctewi" Height="300" Width="400">
+        Title="舰长信箱 v1.1 by dctewi" Height="300" Width="400">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="35"></RowDefinition>

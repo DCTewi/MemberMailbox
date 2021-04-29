@@ -26,6 +26,9 @@ namespace MemberMailbox.Data
 
         [JsonProperty("list")]
         public List<MemberInfo> CurrentPage { get; set; }
+
+        [JsonProperty("top3")]
+        public List<MemberInfo> Top3 { get; set; }
     }
 
     public class MemberStatsInfo

@@ -2,6 +2,7 @@ using MemberMailbox.Data;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace MemberMailbox.Services
@@ -90,6 +91,9 @@ namespace MemberMailbox.Services
                     var totalPageCount = info.Data.Info.TotalPage;
 
                     List<MemberInfo> result = new(info.Data.CurrentPage);
+
+                    // B站真有你的
+                    result.AddRange(info.Data.Top3);
 
                     for (int i = 2; i <= totalPageCount; i++)
                     {
