@@ -1,11 +1,13 @@
 using MemberMailbox.Data;
 using MemberMailbox.Services;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Linq;
 
 namespace MemberMailbox
 {
@@ -167,6 +169,39 @@ namespace MemberMailbox
                 ProgressText.Text = $"测试未通过, 请检查Uid和Cookie: [{exception.Message}]";
                 Checked = false;
             }
+        }
+
+        private async void OnExportClickAsync(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(TextUid.Text))
+            {
+                MessageBox.Show("请输入UID!");
+                return;
+            }
+
+            var dialog = new SaveFileDialog
+            {
+                DefaultExt = "csv",
+                FileName = $"{TextUid.Text} 舰长名单"
+            };
+
+            if (dialog.ShowDialog() ?? false)
+            {
+                var path = dialog.FileName;
+
+                MailboxProxy proxy = new(TextCookie.Text);
+
+                SetProgress(1, "正在获取舰长名单");
+                var memberList = await proxy.GetAllMembersAsync(TextUid.Text);
+
+                var selectedList = memberList.Select(m => $"{m.Username},{m.Uid},{m.MemberLevel}");
+
+                File.WriteAllText(path, $"用户名,Uid,舰长等级{Environment.NewLine}");
+                File.AppendAllText(path, string.Join(Environment.NewLine, selectedList));
+
+                SetProgress(100, "导出成功");
+            }
+
         }
     }
 }

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MemberMailbox"
         mc:Ignorable="d"
-        Title="舰长信箱 v1.1 by dctewi" Height="300" Width="400">
+        Title="舰长信箱 v1.2 by dctewi" Height="300" Width="400">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="35"></RowDefinition>
@@ -37,8 +37,13 @@
                 VerticalAlignment="Top" HorizontalAlignment="Stretch" 
                 Content="测试连通性" Click="OnTestClickAsync"></Button>
 
-        <Label x:Name="LabelMessage" Grid.Column="0" Grid.Row="3" 
-               HorizontalContentAlignment="Center" VerticalContentAlignment="Bottom">信息内容</Label>
+        <StackPanel Grid.Column="0" Grid.Row="3">
+            <Button Content="导出名单" Margin="2, 5, 2, 5" Height="25" Width="75"
+                HorizontalContentAlignment="Center" VerticalContentAlignment="Center" 
+                Click="OnExportClickAsync"/>
+            <Label x:Name="LabelMessage"
+               HorizontalContentAlignment="Center">信息内容</Label>
+        </StackPanel>
         <TextBox x:Name="TextMessage" Grid.Column="1" Grid.Row="2" Grid.RowSpan="2" Margin="0,5,0,5" 
                  HorizontalContentAlignment="Left" VerticalContentAlignment="Top" 
                  FontSize="14" 
