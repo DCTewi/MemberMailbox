@@ -20,188 +20,123 @@ namespace MemberMailbox
         public MainWindow()
         {
             InitializeComponent();
-            CheckInputCache();
-        }
 
-        private void SetChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
-        {
-            Checked = false;
-            SetProgress(0, "");
-        }
+            TextUid.Text = "698438232";
 
-        private void SetProgress(double value, string message)
-        {
-            ProgressMessage.Value = value;
-            ProgressText.Text = message;
-        }
-
-        private void CheckInputCache()
-        {
-
-            if (File.Exists("cache.json"))
+            ButtonGet.Click += async (sender, e) =>
             {
-                var rawjson = File.ReadAllText("cache.json");
-                var info = JsonConvert.DeserializeObject<InputCacheInfo>(rawjson);
-
-                if (info == null)
+                try
                 {
-                    File.Delete("cache.json");
+                    ListMember.Items.Clear();
+                    ListMember.Items.Add("加载中...");
+
+                    MailboxProxy proxy = new(string.Empty);
+
+                    var info = await proxy.GetUserInfoAsync(TextUid.Text);
+
+                    var memberList = await proxy.GetAllMembersAsync(TextUid.Text);
+
+                    var selectedList = memberList.Select(m => $"{m.Username}");
+
+                    ListMember.Items.Clear();
+                    foreach (var i in selectedList)
+                    {
+                        ListMember.Items.Add(i);
+                    }
+
+                    MessageBox.Show($"获取成功, 共{selectedList.Count()}个");
                 }
-                else
+                catch
                 {
-                    TextUid.Text = info.Uid;
-                    TextCookie.Text = info.Cookie;
+                    MessageBox.Show("Uid有误!");
                 }
-            }
-        }
-
-        private void SaveInputCache()
-        {
-            try
-            {
-                var info = new InputCacheInfo { Uid = TextUid.Text, Cookie = TextCookie.Text };
-                var rawjson = JsonConvert.SerializeObject(info);
-                File.WriteAllText("cache.json", rawjson);
-            }
-            finally { }
-        }
-
-        private async void OnSendClickAsync(object sender, RoutedEventArgs e)
-        {
-            if (!Checked)
-            {
-                MessageBox.Show("请先检查连通性!");
-                return;
-            }
-            if (string.IsNullOrWhiteSpace(TextUid.Text))
-            {
-                MessageBox.Show("请输入要发送的消息内容");
-                return;
-            }
-
-            MailboxProxy proxy = new(TextCookie.Text);
-
-            try
-            {
-                var info = await proxy.GetUserInfoAsync(TextUid.Text);
-
-                var confirmResult = MessageBox.Show(
-                    $"将要把消息发送给 [{info.Data.Name}] (直播间号为:{info.Data.Liveroom.RoomId}) 的舰长, 确认吗?",
-                    "确认",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Question);
-
-                if (confirmResult == MessageBoxResult.Yes)
-                {
-                    await SendMessageAsync(TextUid.Text, TextMessage.Text, proxy);
-                }
-            }
-            catch (Exception exception)
-            {
-                MessageBox.Show($"Uid无效!\n异常消息:{exception.Message}");
-            }
-        }
-
-        internal async Task SendMessageAsync(string uid, string msg, MailboxProxy proxy)
-        {
-            try
-            {
-                SetProgress(0, "正在处理消息");
-                msg = msg.Replace(Environment.NewLine, "\\n");
-
-                SetProgress(1, "正在获取舰长名单");
-                var memberList = await proxy.GetAllMembersAsync(TextUid.Text);
-
-                for (int i = 0; i < memberList.Count; i++)
-                {
-                    SetProgress(1 + 99 * i / (double)memberList.Count, $"({i}/{memberList.Count}) 正在发送给[{memberList[i].Username}]");
-
-                    // DEBUG
-                    //await proxy.SendMessageAsync(uid, "1427846", $"正在向 [{memberList[i].Uid}]({memberList[i].Username}) 模拟发送:\\n{msg}");
-
-                    await proxy.SendMessageAsync(uid, memberList[i].Uid, msg);
-
-                    await Task.Delay(400);
-                }
-
-                SetProgress(100, "任务已完成");
-            }
-            catch (Exception exception)
-            {
-                SetProgress(0, $"出现错误:{exception.Message}");
-            }
-        }
-
-        private async void OnTestClickAsync(object sender, RoutedEventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(TextUid.Text) || !UidRegex.IsMatch(TextUid.Text))
-            {
-                MessageBox.Show("请输入正确的Uid");
-                return;
-            }
-            if (string.IsNullOrWhiteSpace(TextCookie.Text))
-            {
-                MessageBox.Show("请输入对应账号的Cookie");
-                return;
-            }
-            ProgressText.Text = "正在测试连通性";
-
-            MailboxProxy proxy = new(TextCookie.Text);
-
-            try
-            {
-                var result = await proxy.SendMessageAsync(TextUid.Text, "1427846", "[测试消息]该账号正在使用MemberMailbox测试连通性");
-
-                if (result.Code == 0)
-                {
-                    SaveInputCache();
-                    ProgressText.Text = "测试通过";
-                    Checked = true;
-                }
-                else
-                {
-                    ProgressText.Text = $"测试未通过, 请检查Uid和Cookie: [{result.Message}]";
-                    Checked = false;
-                }
-            }
-            catch (Exception exception)
-            {
-                ProgressText.Text = $"测试未通过, 请检查Uid和Cookie: [{exception.Message}]";
-                Checked = false;
-            }
-        }
-
-        private async void OnExportClickAsync(object sender, RoutedEventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(TextUid.Text))
-            {
-                MessageBox.Show("请输入UID!");
-                return;
-            }
-
-            var dialog = new SaveFileDialog
-            {
-                DefaultExt = "csv",
-                FileName = $"{TextUid.Text} 舰长名单"
             };
 
-            if (dialog.ShowDialog() ?? false)
+            ButtonExport.Click += async (sender, e) =>
             {
-                var path = dialog.FileName;
+                try
+                {
+                    ListMember.Items.Clear();
+                    ListMember.Items.Add("加载中...");
 
-                MailboxProxy proxy = new(TextCookie.Text);
+                    MailboxProxy proxy = new(string.Empty);
 
-                SetProgress(1, "正在获取舰长名单");
-                var memberList = await proxy.GetAllMembersAsync(TextUid.Text);
+                    var info = await proxy.GetUserInfoAsync(TextUid.Text);
 
-                var selectedList = memberList.Select(m => $"{m.Username},{m.Uid},{m.MemberLevel}");
+                    var memberList = await proxy.GetAllMembersAsync(TextUid.Text);
 
-                File.WriteAllText(path, $"用户名,Uid,舰长等级{Environment.NewLine}");
-                File.AppendAllText(path, string.Join(Environment.NewLine, selectedList));
+                    var selectedList = memberList.Select(m => $"{m.Username}");
 
-                SetProgress(100, "导出成功");
-            }
+                    var dialog = new SaveFileDialog
+                    {
+                        DefaultExt = "txt",
+                        FileName = $"{TextUid.Text} 舰长名单"
+                    };
 
+                    if (dialog.ShowDialog() ?? false)
+                    {
+                        var path = dialog.FileName;
+                        File.AppendAllText(path, string.Join(Environment.NewLine, selectedList));
+
+                    }
+
+                    ListMember.Items.Clear();
+                    foreach (var i in selectedList)
+                    {
+                        ListMember.Items.Add(i);
+                    }
+
+                    MessageBox.Show($"获取成功, 共{selectedList.Count()}个");
+                }
+                catch
+                {
+                    MessageBox.Show("Uid有误!");
+                }
+            };
+
+            ButtonExportAll.Click += async (sender, e) =>
+            {
+                try
+                {
+                    ListMember.Items.Clear();
+                    ListMember.Items.Add("加载中...");
+
+                    MailboxProxy proxy = new(string.Empty);
+
+                    var info = await proxy.GetUserInfoAsync(TextUid.Text);
+
+                    var memberList = await proxy.GetAllMembersAsync(TextUid.Text);
+
+                    var selectedList = memberList.Select(m => $"{m.Username},{m.Uid},{m.MemberLevel}");
+
+                    var dialog = new SaveFileDialog
+                    {
+                        DefaultExt = "txt",
+                        FileName = $"{TextUid.Text} 舰长名单"
+                    };
+
+                    if (dialog.ShowDialog() ?? false)
+                    {
+                        var path = dialog.FileName;
+
+                        File.WriteAllText(path, $"用户名,Uid,舰长等级{Environment.NewLine}");
+                        File.AppendAllText(path, string.Join(Environment.NewLine, selectedList));
+
+                    }
+
+                    ListMember.Items.Clear();
+                    foreach (var i in selectedList)
+                    {
+                        ListMember.Items.Add(i);
+                    }
+
+                    MessageBox.Show($"获取成功, 共{selectedList.Count()}个");
+                }
+                catch
+                {
+                    MessageBox.Show("Uid有误!");
+                }
+            };
         }
     }
 }
